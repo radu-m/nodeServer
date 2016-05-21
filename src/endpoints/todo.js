@@ -30,7 +30,7 @@ function TodoEndpoint(connection) {
             connection.createDocument(req.body, (e) => {
                 res.sendStatus(500);
             }, (id) => {
-                res.set('Resource-Location', id);
+                res.set('Location', id);
                 res.sendStatus(201);
             }, 'todo');
         } 
