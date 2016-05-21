@@ -1,8 +1,7 @@
 //Lets require/import the HTTP module
-var couchbase = require('couchbase');
 var express = require('express');
-var uuid = require('node-uuid');
 var bodyParser = require('body-parser');
+var Database = require('./src/couch/database.js');
 
 var app = express();
 app.use(bodyParser.json());
@@ -13,57 +12,46 @@ app.use(bodyParser.urlencoded({
 //Lets define a port we want to listen to
 const PORT=8080; 
 
-var cluster = new couchbase.Cluster('127.0.0.1');
-var bucket = cluster.openBucket('default', function(err) {
-    if (err) {
-        console.log("Failed to connect to couchbase");
-    }
+var database = new Database({ip: '127.0.0.1', bucket: 'default'});
+
+var connection = database.connect(function(e) {
+    console.log("Failed to connect to database");
 });
 
 app.get('/todo/:id', function(req, res) {
-    bucket.get(req.params.id, function(err, result) {
-        if (err) {
-            res.send('Error while get ' + req.params.id);
-        } else {
-            res.send(result.value);
-        }
+    connection.getDocument(req.params.id, (e) => {
+        res.sendStatus(404);
+    },
+    (doc) => {
+        res.send(doc);
     });
 });
-
-app.get('/todo', function(req, res) {
-});
-
+//
+// app.get('/todo', function(req, res) {
+// });
+//
 app.post('/todo', function(req, res) {
-    var id = 'todo-' + uuid.v4();
-    console.log(req.params);
-    bucket.insert(id, req.body, function(err, result) {
-        if (err) {
-            res.send('Error while post');
-        } else {
-            res.set('Content-Type', 'text/plain');
-            res.set('Resource-Location', id);
-            res.sendStatus(201);
-        }
-    });
+    connection.createDocument(req.body, (e) => {
+        res.sendStatus(500);
+    }, (id) => {
+        res.set('Resource-Location', id);
+        res.sendStatus(201);
+    }, 'todo');
 });
 
 app.put('/todo/:id', function(req, res) {
-    bucket.replace(req.params.id, req.body, function(err, result) {
-        if (err) {
-            res.send('Error while put');
-        } else {
-            res.send("Success on put");
-        }
+    connection.updateDocument(req.params.id, req.body, (e) => {
+        res.sendStatus(404);        
+    }, () => {
+        res.sendStatus(200);        
     });
 });
 
 app.delete('/todo/:id', function(req, res) {
-    bucket.remove(req.params.id, function(err, result) {
-        if (err) {
-            res.send('Error while delete ' + req.params.id);
-        } else {
-            res.send('Success delete');
-        }
+    connection.deleteDocument(req.params.id, (e) => {
+        res.sendStatus(200);  
+    }, (s) => {
+        res.sendStatus(200);  
     });
 });
 
