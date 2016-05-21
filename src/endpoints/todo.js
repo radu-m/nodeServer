@@ -3,6 +3,8 @@ var router = express.Router();
 
 var method = TodoEndpoint.prototype;
 
+const TYPE = 'todo';
+
 function TodoEndpoint(connection) {
     this._router = router;
 
@@ -14,25 +16,42 @@ function TodoEndpoint(connection) {
             res.send(doc);
         });
     });
-    //
-    // app.get('/todo', function(req, res) {
-    // });
-    //
-    this._router.post('/', function(req, res) {
-        connection.createDocument(req.body, (e) => {
+
+    this._router.get('/', function(req, res) {
+        connection.getDocumentsByType(TYPE, (e) => {
             res.sendStatus(500);
-        }, (id) => {
-            res.set('Resource-Location', id);
-            res.sendStatus(201);
-        }, 'todo');
+        }, (todos) => {
+            res.send(todos);
+        });
+    });
+
+    this._router.post('/', function(req, res) {
+        if (req.body.type && req.body.type === TYPE) {
+            connection.createDocument(req.body, (e) => {
+                res.sendStatus(500);
+            }, (id) => {
+                res.set('Resource-Location', id);
+                res.sendStatus(201);
+            }, 'todo');
+        } 
+        else {
+            // Bad request
+            res.sendStatus(400);
+        }
     });
 
     this._router.put('/:id', function(req, res) {
-        connection.updateDocument(req.params.id, req.body, (e) => {
-            res.sendStatus(404);        
-        }, () => {
-            res.sendStatus(200);        
-        });
+        if (req.body.type && req.body.type === TYPE) {
+            connection.updateDocument(req.params.id, req.body, (e) => {
+                res.sendStatus(404);        
+            }, () => {
+                res.sendStatus(200);        
+            });
+        } 
+        else {
+            // Bad request
+            res.sendStatus(400);
+        }
     });
 
     this._router.delete('/:id', function(req, res) {

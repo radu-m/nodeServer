@@ -1,4 +1,5 @@
 var uuid = require('node-uuid');
+var ViewQuery = require('couchbase').ViewQuery;
 
 var method = Connection.prototype;
 
@@ -45,6 +46,25 @@ method.deleteDocument = function(id, onError, onSuccess) {
         } else {
             onSuccess();
         }
+    });
+}
+
+method.getDocumentsByType = function(type, onError, onSuccess) {
+    var query = ViewQuery.from('all', 'type');
+    query.key(type);
+    query.stale(ViewQuery.Update.BEFORE);
+    this._bucket.query(query, (err, results) => {
+        if (err) {
+            onError(err);
+        } else {
+            var todos = [];
+            results.forEach(r => {
+                r.value.id = r.id;
+                todos.push(r.value);
+            });
+
+            onSuccess(todos);
+        }  
     });
 }
 
