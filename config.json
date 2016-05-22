@@ -1,7 +1,7 @@
 {
     "server_port": 8080,
     "couchbase": {
-        "ip": "127.0.0.1",
+        "ip": "37.139.13.249",
         "bucket_name": "default"
     }
 }
